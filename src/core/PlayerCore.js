@@ -63,13 +63,13 @@ export class PlayerCore {
             container: this.container,
 
             // Media elements
-            video: $('video'),
-            audio: $('audio'),
+            video: $('video') || $doc('video'),
+            audio: $('audio') || $doc('audio'),
             videoContainer: $('.video-container'),
-            audioContainer: $('.audio-container'),
+            audioContainer: $('.audio-container') || $doc('.audio-container'),
 
             // Controls
-            controls: $('#controls, .controls'),
+            controls: $('#controls') || $('.controls'),
             playPauseBtn: $('#play-pause'),
             rewindBtn: $('#rewind'),
             forwardBtn: $('#forward'),
@@ -77,20 +77,20 @@ export class PlayerCore {
             nextBtn: $('#next-track'),
 
             // Progress
-            progressBar: $('#progress-bar, .progress-bar'),
-            progressFill: $('#progress-fill, .progress-fill'),
-            progressBuffer: $('#progress-buffer, .progress-buffer'),
-            progressTooltip: $('#progress-tooltip, .progress-tooltip'),
-            currentTime: $('#current-time, .current-time'),
-            duration: $('#duration, .duration'),
+            progressBar: $('#progress-bar') || $('.progress-bar'),
+            progressFill: $('#progress-fill') || $('.progress-fill'),
+            progressBuffer: $('#progress-buffer') || $('.progress-buffer'),
+            progressTooltip: $('#progress-tooltip') || $('.progress-tooltip'),
+            currentTime: $('#current-time') || $('.current-time'),
+            duration: $('#duration') || $('.duration'),
 
             // Volume
-            volumeBtn: $('#volume-btn, #volume'),
+            volumeBtn: $('#volume-btn'),
             volumeSlider: $('#volume-slider'),
             volumeSliderContainer: $('#volume-slider-container'),
 
             // Playback speed
-            speedBtn: $('#speed-btn, #playback-speed'),
+            speedBtn: $('#speed-btn'),
             speedOptions: $('#speed-options'),
 
             // Display modes
@@ -102,25 +102,26 @@ export class PlayerCore {
             subtitleBtn: $('#subtitle-toggle'),
 
             // Playlist
-            sidebar: $('#sidebar, .sidebar'),
-            playlistContainer: $('#playlist, .playlist'),
+            sidebar: $doc('#sidebar') || $doc('.sidebar'),
+            sidebarClose: $doc('#sidebar-close'),
+            playlistContainer: $doc('#playlist') || $doc('.playlist'),
             shuffleBtn: $('#shuffle'),
             repeatBtn: $('#repeat'),
 
-            // File loading
+            // File loading - these are inside the container
             openFileBtn: $('#open-file'),
             openFolderBtn: $('#open-folder'),
             subtitleUploadBtn: $('#subtitle-upload'),
-            dropZone: $('#drop-zone, .drop-zone'),
+            dropZone: $('#drop-zone') || $('.drop-zone'),
 
             // Audio visualizer
-            visualizerCanvas: $('#visualizer-canvas, .visualizer-canvas'),
-            albumArt: $('#album-art, .album-art'),
-            trackTitle: $('#track-title, .track-title'),
-            trackArtist: $('#track-artist, .track-artist'),
+            visualizerCanvas: $('#visualizer-canvas') || $('.visualizer-canvas'),
+            albumArt: $('#album-art') || $('.album-art'),
+            trackTitle: $('#track-title') || $('.track-title'),
+            trackArtist: $('#track-artist') || $('.track-artist'),
 
-            // Theme
-            themeBtn: $('#theme-toggle'),
+            // Theme - OUTSIDE the container, use document
+            themeBtn: $doc('#theme-toggle'),
 
             // Sidebar toggle
             sidebarToggleBtn: $('#sidebar-toggle'),
@@ -132,6 +133,16 @@ export class PlayerCore {
 
         // Use video as primary media element, audio as secondary
         this.mediaElement = this.elements.video || this.elements.audio;
+
+        // Debug logging
+        console.log('Elements found:', {
+            themeBtn: !!this.elements.themeBtn,
+            openFileBtn: !!this.elements.openFileBtn,
+            openFolderBtn: !!this.elements.openFolderBtn,
+            dropZone: !!this.elements.dropZone,
+            sidebar: !!this.elements.sidebar,
+            sidebarToggleBtn: !!this.elements.sidebarToggleBtn,
+        });
     }
 
     /**
@@ -196,11 +207,42 @@ export class PlayerCore {
      * Initialize UI managers
      */
     initializeUI() {
+        const { playlistContainer } = this.elements;
+
         // Theme manager
         this.themeManager = new ThemeManager(this.container);
 
         // UI manager
         this.uiManager = new UIManager(this.elements);
+
+        // Playlist UI
+        if (playlistContainer) {
+            this.playlistUI = new PlaylistUI(playlistContainer, this.playlistManager);
+        }
+
+        // Subscribe to events for UI updates
+        eventBus.on(EVENTS.MEDIA_LOAD, () => this.hideDropZone());
+        eventBus.on(EVENTS.TRACK_CHANGE, () => this.hideDropZone());
+    }
+
+    /**
+     * Hide the drop zone when media is loaded
+     */
+    hideDropZone() {
+        const { dropZone } = this.elements;
+        if (dropZone) {
+            dropZone.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Show the drop zone
+     */
+    showDropZone() {
+        const { dropZone } = this.elements;
+        if (dropZone) {
+            dropZone.classList.remove('hidden');
+        }
     }
 
     /**
@@ -224,6 +266,7 @@ export class PlayerCore {
             repeatBtn,
             themeBtn,
             sidebarToggleBtn,
+            sidebarClose,
             openFileBtn,
             openFolderBtn,
             subtitleUploadBtn,
@@ -270,8 +313,9 @@ export class PlayerCore {
         // Theme
         themeBtn?.addEventListener('click', () => this.themeManager.toggle());
 
-        // Sidebar
-        sidebarToggleBtn?.addEventListener('click', () => this.uiManager.toggleSidebar());
+        // Sidebar toggle and close
+        sidebarToggleBtn?.addEventListener('click', () => this.toggleSidebar());
+        sidebarClose?.addEventListener('click', () => this.toggleSidebar());
 
         // File loading
         openFileBtn?.addEventListener('click', () => this.handleOpenFile());
@@ -402,6 +446,15 @@ export class PlayerCore {
             const speed = parseFloat(li.dataset.speed);
             this.mediaController.setPlaybackRate(speed);
             this.elements.speedOptions?.classList.add('hidden');
+        }
+    }
+
+    // --- Sidebar ---
+
+    toggleSidebar() {
+        const { sidebar } = this.elements;
+        if (sidebar) {
+            sidebar.classList.toggle('open');
         }
     }
 

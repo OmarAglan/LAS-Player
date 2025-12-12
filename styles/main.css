@@ -97,6 +97,8 @@ body {
   max-width: 1200px;
   display: flex;
   gap: var(--spacing-md);
+  justify-content: center;
+  align-items: flex-start;
 }
 
 #player-container {
@@ -109,6 +111,7 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-lg), var(--shadow-glow);
   transition: box-shadow var(--transition-normal);
+  margin: 0 auto;
 }
 
 #player-container:hover {
@@ -123,6 +126,7 @@ body {
 
 /* ===== Video Container ===== */
 .video-container {
+  position: relative;
   width: 100%;
   height: 100%;
 }
@@ -132,6 +136,12 @@ body {
   height: 100%;
   object-fit: contain;
   background: #000;
+}
+
+/* Hide video when no source */
+.video-container video:not([src]),
+.video-container video[src=""] {
+  display: none;
 }
 
 /* Hide native controls */
@@ -222,8 +232,13 @@ video::-webkit-media-controls-enclosure {
   right: 0;
   padding: var(--spacing-md);
   background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.5) 60%, transparent);
-  opacity: 0;
+  opacity: 1;
   transition: opacity var(--transition-normal);
+  z-index: 10;
+}
+
+.controls.hidden {
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -602,27 +617,35 @@ video::-webkit-media-controls-enclosure {
 
 /* ===== Drop Zone ===== */
 .drop-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  /* Leave space for controls */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  border: 2px dashed var(--color-glass-border);
-  border-radius: var(--radius-lg);
+  background: rgba(15, 23, 42, 0.95);
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
+  z-index: 5;
+}
+
+.drop-zone.hidden {
+  display: none;
 }
 
 .drop-zone.drag-over {
-  border-color: var(--color-accent);
-  background: var(--color-accent-light);
+  border: 3px dashed var(--color-accent);
+  background: rgba(20, 184, 166, 0.1);
 }
 
 .drop-zone-icon {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-md);
-  color: var(--color-text-muted);
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-accent);
 }
 
 .drop-zone-text {
@@ -750,6 +773,7 @@ video::-webkit-media-controls-enclosure {
 }
 
 @media (max-width: 480px) {
+
   .controls-left .control-btn:not(.primary),
   .controls-right .control-btn:not([id="fullscreen"]):not([id="volume-btn"]) {
     display: none;
@@ -776,9 +800,12 @@ video::-webkit-media-controls-enclosure {
 
 /* ===== Animations ===== */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -788,6 +815,7 @@ video::-webkit-media-controls-enclosure {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
