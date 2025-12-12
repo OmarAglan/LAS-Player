@@ -119,7 +119,7 @@ export class MediaController {
 
     // --- Track Loading ---
 
-    loadTrack(track) {
+    loadTrack(track, autoPlay = true) {
         if (!track || !track.url) return;
 
         // Revoke previous blob URL if exists
@@ -140,6 +140,15 @@ export class MediaController {
         });
 
         eventBus.emit(EVENTS.MEDIA_LOAD, { track });
+
+        // Auto-play when ready
+        if (autoPlay) {
+            const playWhenReady = () => {
+                this.play();
+                this.media.removeEventListener('canplay', playWhenReady);
+            };
+            this.media.addEventListener('canplay', playWhenReady);
+        }
     }
 
     loadSource(url, metadata = {}) {
